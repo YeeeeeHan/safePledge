@@ -3,8 +3,11 @@ module go_filecoin
 go 1.21.0
 
 require (
+	github.com/filecoin-project/go-address v1.1.0
 	github.com/filecoin-project/go-jsonrpc v0.3.1
+	github.com/filecoin-project/go-state-types v0.12.1
 	github.com/filecoin-project/lotus v1.23.4-0.20230925130623-d64bc2c9be1a
+	github.com/gorilla/mux v1.8.0
 )
 
 require (
@@ -18,7 +21,6 @@ require (
 	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
 	github.com/daaku/go.zipexe v1.0.2 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
-	github.com/filecoin-project/go-address v1.1.0 // indirect
 	github.com/filecoin-project/go-amt-ipld/v2 v2.1.0 // indirect
 	github.com/filecoin-project/go-amt-ipld/v3 v3.1.0 // indirect
 	github.com/filecoin-project/go-amt-ipld/v4 v4.2.0 // indirect
@@ -31,7 +33,6 @@ require (
 	github.com/filecoin-project/go-hamt-ipld/v2 v2.0.0 // indirect
 	github.com/filecoin-project/go-hamt-ipld/v3 v3.1.0 // indirect
 	github.com/filecoin-project/go-padreader v0.0.1 // indirect
-	github.com/filecoin-project/go-state-types v0.12.1 // indirect
 	github.com/filecoin-project/go-statemachine v1.0.3 // indirect
 	github.com/filecoin-project/go-statestore v0.2.0 // indirect
 	github.com/filecoin-project/kubo-api-client v0.0.1 // indirect
