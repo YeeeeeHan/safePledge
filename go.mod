@@ -7,7 +7,6 @@ require (
 	github.com/filecoin-project/go-jsonrpc v0.3.1
 	github.com/filecoin-project/go-state-types v0.12.1
 	github.com/filecoin-project/lotus v1.23.4-0.20230925130623-d64bc2c9be1a
-	github.com/gorilla/mux v1.8.0
 )
 
 require (
