@@ -20,9 +20,14 @@ const (
 	TERMINATION_REWARD_FACTOR_DENOM = 2
 )
 
+
+
+
 func main() {
-	addr := "filecoin.chainup.net"
 	minerId := "f02201621"
+
+	
+	addr := "filecoin.chainup.net"
 	minerAddress, _ := address.NewFromString(minerId) // Initialize the variable with an address
 	fmt.Print("Serving request: ", minerAddress, "\n")
 
