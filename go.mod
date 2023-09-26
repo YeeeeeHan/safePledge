@@ -1,6 +1,6 @@
 module go_filecoin
 
-go 1.21.0
+go 1.21
 
 require (
 	github.com/filecoin-project/go-address v1.1.0
