@@ -66,40 +66,41 @@ func main() {
 			panic(err)
 		}
 
-		s := miner.State{}
+		miner := miner.State{}
 		d, err := json.Marshal(actorState.State)
 		if err != nil {
 			panic(err)
 		}
-		err = json.Unmarshal(d, &s)
+		err = json.Unmarshal(d, &miner)
 		if err != nil {
 			panic(err)
 		}
 		fmt.Printf("\n__________________[Eligible Asset Calculation]__________________\n\n")
-		fmt.Printf("   initial_pledge                           = %v \n", types.FIL(s.InitialPledge).Short())
+		fmt.Printf("   initial_pledge                           = %v \n", types.FIL(miner.InitialPledge).Short())
 		fmt.Printf(" + available_bal                            = %v\n", types.FIL(availableBal).Short())
-		fmt.Printf(" + locked_funds                             = %v\n", types.FIL(s.LockedFunds).Short())
-		fmt.Printf(" - fee_debt                                 = %v\n", types.FIL(s.FeeDebt).Short())
-		fmt.Printf(" = eligible_asset (formula 1)               = %v \n", types.FIL(big.Sub(big.Add(big.Add(s.InitialPledge, availableBal), s.LockedFunds), s.FeeDebt)).Short())
+		fmt.Printf(" + locked_funds                             = %v\n", types.FIL(miner.LockedFunds).Short())
+		fmt.Printf(" - fee_debt                                 = %v\n", types.FIL(miner.FeeDebt).Short())
+		fmt.Printf(" = eligible_asset (formula 1)               = %v \n", types.FIL(big.Sub(big.Add(big.Add(miner.InitialPledge, availableBal), miner.LockedFunds), miner.FeeDebt)).Short())
 		fmt.Printf("\n\n")
 		fmt.Printf("   actor_balance                            = %v\n", types.FIL(actorState.Balance).Short())
-		fmt.Printf(" - fee_debt                                 = %v\n", types.FIL(s.FeeDebt).Short())
-		fmt.Printf(" - precommit_deposits                       = %v\n", types.FIL(s.PreCommitDeposits).Short())
-		fmt.Printf(" = eligible_asset (formula 2)               = %v \n", types.FIL(big.Sub(big.Sub(actorState.Balance, s.FeeDebt), s.PreCommitDeposits)).Short())
+		fmt.Printf(" - fee_debt                                 = %v\n", types.FIL(miner.FeeDebt).Short())
+		fmt.Printf(" - precommit_deposits                       = %v\n", types.FIL(miner.PreCommitDeposits).Short())
+		fmt.Printf(" = eligible_asset (formula 2)               = %v \n", types.FIL(big.Sub(big.Sub(actorState.Balance, miner.FeeDebt), miner.PreCommitDeposits)).Short())
 
 		// Calculation termination fee of all sectors
 		totalTerminationFee := big.Zero()
 		totalInitialPledge := big.Zero()
 		feeList := []big.Int{}
-		expiredSectorCount := 0
+		numExpiredSectors := 0
 		dayRewardList := []big.Int{}
+		initialPledgeList := []big.Int{}
 		epochsToExpirationList := []big.Int{}
 		sectorEpochAgeList := []big.Int{}
 		weightedDayReward := big.Zero()
 		// Print all sector details
 		for _, sector := range sectors {
 			if sector.Expiration < tipset.Height() {
-				expiredSectorCount += 1
+				numExpiredSectors += 1
 				continue
 			}
 			if sector.ReplacedSectorAge > 0 {
@@ -111,28 +112,33 @@ func main() {
 			totalTerminationFee = big.Add(totalTerminationFee, fee)
 			totalInitialPledge = big.Add(totalInitialPledge, sector.InitialPledge)
 			feeList = append(feeList, fee)
+			initialPledgeList = append(initialPledgeList, sector.InitialPledge)
 			epochsToExpirationList = append(epochsToExpirationList, big.NewInt(int64(sector.Expiration-tipset.Height())))
 			dayRewardList = append(dayRewardList, sector.ExpectedDayReward)
 			sectorEpochAgeList = append(sectorEpochAgeList, big.NewInt(int64(sectorAge)))
 			weightedDayReward = big.Add(weightedDayReward, big.Mul(sector.ExpectedDayReward, big.NewInt(int64(sectorAge))))
 		}
 
-		eligibleAsset := big.Sub(big.Sub(actorState.Balance, s.FeeDebt), s.PreCommitDeposits)
+		eligibleAsset := big.Sub(big.Sub(actorState.Balance, miner.FeeDebt), miner.PreCommitDeposits)
 		safePledge := big.Sub(eligibleAsset, totalTerminationFee)
+		numActiveSectors := len(sectors) - numExpiredSectors
+
 		fmt.Printf("\n")
 		fmt.Printf("\n__________________[BaseTerminationFee Calculation]__________________\n\n")
 		fmt.Printf("BaseTerminationFee (all active sectors)     = %v\n", types.FIL(totalTerminationFee).Short())
 		fmt.Printf("\n__________________[Stats]__________________\n\n")
-		fmt.Printf("safePledge            	                    = %v\n", types.FIL(safePledge).Short())
 		fmt.Printf("baseTermination/eligibleAsset               = %v %%\n", big.Div(big.Mul(totalTerminationFee, big.NewInt(100)), eligibleAsset))
+		fmt.Printf("baseTermination/initialPledge               = %v %%\n", big.Div(big.Mul(totalTerminationFee, big.NewInt(100)), miner.InitialPledge))
+		fmt.Printf("safePledge            	                    = %v\n", types.FIL(safePledge).Short())
 		fmt.Printf("safePledge/eligibleAsset		                = %v %%\n", big.Div(big.Mul(safePledge, big.NewInt(100)), eligibleAsset))
-		fmt.Printf("baseTermination/initialPledge               = %v %%\n", big.Div(big.Mul(totalTerminationFee, big.NewInt(100)), s.InitialPledge))
-		fmt.Printf("safePledge/initialPledge		                = %v %%\n", big.Div(big.Mul(safePledge, big.NewInt(100)), s.InitialPledge))
+		fmt.Printf("safePledge/initialPledge		                = %v %%\n\n", big.Div(big.Mul(safePledge, big.NewInt(100)), miner.InitialPledge))
+		fmt.Printf("avg initial_pledge per sector               = %v\n", types.FIL(big.Div(totalInitialPledge, big.NewInt(int64(numActiveSectors)))).Short())
+		fmt.Printf("median initial_pledge per sector            = %v\n", types.FIL(bigIntMedian(initialPledgeList)).Short())
 		fmt.Printf("median expected_day_reward                  = %v\n", types.FIL(bigIntMedian(dayRewardList)).Short())
 		fmt.Printf("median sector_age                           = %v\n", big.Div(bigIntMedian(sectorEpochAgeList), big.NewInt(int64(NUM_EPOCH_IN_DAY))))
 		fmt.Printf("median sector BTF                           = %v\n", types.FIL(bigIntMedian(feeList)).Short())
 		fmt.Printf("median days to expiration                   = %v\n", big.Div(bigIntMedian(epochsToExpirationList), big.NewInt(int64(NUM_EPOCH_IN_DAY))))
-		fmt.Printf("Daily vesting rewards                       = %v\n", types.FIL(big.Div(s.LockedFunds, big.NewInt(180))).Short())
+		fmt.Printf("Daily vesting rewards                       = %v\n", types.FIL(big.Div(miner.LockedFunds, big.NewInt(180))).Short())
 
 		// funds := big.Add(totalInitialPledge, availableBal)
 		// fmt.Printf("TotalInitialPledge                          = %v\n", types.FIL(totalInitialPledge).Short())
@@ -142,8 +148,8 @@ func main() {
 
 		fmt.Printf("\n__________________[Sector Expiry]__________________\n\n")
 		fmt.Printf("%d total sectors\n", len(sectors))
-		fmt.Printf("%d expired sectors\n", expiredSectorCount)
-		fmt.Printf("%d active sectors\n", len(sectors)-expiredSectorCount)
+		fmt.Printf("%d expired sectors\n", numExpiredSectors)
+		fmt.Printf("%d active sectors\n", numActiveSectors)
 	}
 }
 
